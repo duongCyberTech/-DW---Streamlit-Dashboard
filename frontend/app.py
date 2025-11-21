@@ -43,7 +43,6 @@ st.write("---")
 selected_year = st.selectbox("Year: ", stats['years'])
 monthly_revenue = api.revenue_in_year_by_month(selected_year)
 df_monthly_revenue = pd.DataFrame(monthly_revenue['revenue_monthly'])
-df_monthly_revenue['month'] = pd.to_datetime(df_monthly_revenue['month'], format='%m').dt.strftime('%b')
 
 df_cat_revenue = pd.DataFrame(monthly_revenue['revenue_cat'])
 st.write(df_monthly_revenue)
@@ -51,17 +50,38 @@ st.write(df_monthly_revenue)
 # --- CHARTS ---
 col1, col2 = st.columns(2)
 with col1:
-    fig1 = px.line(df_monthly_revenue, x="month", y="totalamount", title=f"Doanh thu theo tháng trong năm {selected_year}", markers=True)
-    fig1.update_traces(line_color="#1abc9c", marker_color="#16a085")
+    all_malls = df_monthly_revenue['shopping_mall'].unique().tolist()
+    selected_malls = st.multiselect(
+        "Chọn Mall để hiển thị:",
+        options=all_malls,
+        default=all_malls[:3] # Mặc định hiện Top 5
+    )
+    filtered_df = df_monthly_revenue[df_monthly_revenue['shopping_mall'].isin(selected_malls)]
+    filtered_df['totalamount'] = filtered_df['totalamount'].astype(float)
+    filtered_df['shopping_mall'] = filtered_df['shopping_mall'].astype(str)
+    fig1 = px.line(
+        filtered_df, 
+        x="month", 
+        y="totalamount", 
+        color='shopping_mall',
+        color_discrete_sequence=px.colors.qualitative.Plotly,
+        labels={'totalamount': 'Doanh thu', 'month': 'Tháng', 'shopping_mall': 'TTTM'},
+        title=f"Doanh thu theo tháng trong năm {selected_year}", 
+        markers=True
+    )
+    # fig1.update_traces(line_color="#1abc9c", marker_color="#16a085")
+    fig1.update_layout(template="plotly_dark")
     st.plotly_chart(fig1, use_container_width=True)
 
 # Orders bar chart
 with col2:
+    all_malls_ = df_cat_revenue['shopping_mall'].unique().tolist()
+    selected_mall = st.selectbox('Trung tâm mua sắm: ', all_malls_)
     fig2 = px.pie(
-        df_cat_revenue,
+        df_cat_revenue[df_cat_revenue['shopping_mall'] == selected_mall],
         values='totalamount',
         names='category',
-        title='Tỉ trọng doanh thu theo danh mục sản phẩm',
+        title=f'Tỉ trọng doanh thu theo danh mục sản phẩm của Trung tâm mua sắm {selected_mall}',
         hole=0.4,
         color_discrete_sequence=px.colors.sequential.RdBu
     )
@@ -70,19 +90,24 @@ with col2:
 
 st.write("---")
 st.write("## **Phân tích RFM (Recency, Frequency, Monetary)**")
-selected_limit = st.selectbox("Limit: ", [5, 10, 20, 50, 100])
-rfm_data = api.rfm_analysis(selected_limit)
+col1, col2 = st.columns(2)
+with col1:
+    selected_limit = st.selectbox("Limit: ", [5, 10, 20, 50, 100])
+with col2:
+    rfm_mall = st.selectbox('RFM của Trung tâm thương mại: ', all_malls)
+rfm_data = api.rfm_analysis(rfm_mall, selected_limit)
 df_rfm = pd.DataFrame(rfm_data['rfm_data'])
 df_rfm['monetary'] = pd.to_numeric(df_rfm['monetary'], errors='coerce')
 
-fig = px.scatter(
+fig3 = px.scatter(
     df_rfm, 
     x="recency",      
     y="freq",          
     size="monetary", 
     color="monetary",  
     hover_name="customer_id", 
-    title="RFM của 50 khách hàng quay lại gần đây nhất",
+    labels={'recency': 'Thời gian kể từ ngày mua gần nhất', 'freq': 'Tần suất mua hàng'},
+    title=f"RFM của {selected_limit} khách hàng quay lại gần đây nhất của trung tâm thương mại {rfm_mall}",
     size_max=60        
 )
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig3, use_container_width=True)

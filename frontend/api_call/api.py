@@ -37,9 +37,11 @@ class Api:
         except rqs.exceptions.RequestException as e:
             self.st.error(f"Error: {e}")
 
-    def rfm_analysis(self, limit = 50):
+    def rfm_analysis(self, mall, limit = 50):
         try:
-            res =rqs.get(self.api_url + f"/api/rfm?limit={limit}")
+            if mall == None:
+                res =rqs.get(self.api_url + f"/api/rfm?limit={limit}")
+            else: res =rqs.get(self.api_url + f"/api/rfm?limit={limit}&mall={mall}")
             res.raise_for_status()
             data = res.json()
             self.st.success("✅ Dữ liệu tải thành công!")

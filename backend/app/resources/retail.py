@@ -4,6 +4,7 @@ from app import db
 from app.models import Retail, Rfm 
 import pandas as pd
 from sqlalchemy import func, desc 
+import calendar
 
 # Define the parser for POST request
 retail_parser = reqparse.RequestParser()
@@ -83,28 +84,35 @@ class RevenueByMonthInYear(Resource):
     def get(self):
         year = request.args.get('year', type=int)
         revenue_monthly = (
-            Retail.query.filter_by(year=year).all()  # trả về list
+            Retail.query.with_entities(Retail.month, Retail.totalamount, Retail.shopping_mall).filter_by(year=year).all()  # trả về list
         )
 
-        res = [item.to_dict() for item in revenue_monthly]
-        df = pd.DataFrame(res)
-        revenue_by_month = df.groupby('month')['totalamount'].sum().reset_index()
-        revenue_by_month = revenue_by_month.sort_values(by='month',ascending=True).to_dict()
+        df = pd.DataFrame(revenue_monthly)
+        df['month'] = df['month'].astype(int)
+        if str(df['month'].dtype) != 'int64' and str(df['month'].dtype) != 'int32':
+            print("Type cast failed!") # Debug
+            return
+        revenue_by_month = df.groupby(['month', 'shopping_mall'])['totalamount'].sum().reset_index()
+        revenue_by_month = revenue_by_month.sort_values(by='month',ascending=True)
+        revenue_by_month['month'] = revenue_by_month['month'].apply(lambda x: calendar.month_abbr[int(x)])
 
-        revenue_cat = Retail.query.with_entities(Retail.category, Retail.totalamount).filter_by(year=year).all()
+        revenue_cat = Retail.query.with_entities(Retail.category, Retail.totalamount, Retail.shopping_mall).filter_by(year=year).all()
         df = pd.DataFrame(revenue_cat)
-        revenue_cat = df.groupby('category')['totalamount'].sum().reset_index()
-        revenue_cat = revenue_cat.sort_values(by='totalamount', ascending=False).to_dict()
+        revenue_cat = df.groupby(['shopping_mall', 'category'])['totalamount'].sum().reset_index()
+        revenue_cat = revenue_cat.to_dict(orient='records')
 
         return jsonify({
-            "revenue_monthly": revenue_by_month, 
+            "revenue_monthly": revenue_by_month.to_dict(orient='records'), 
             "revenue_cat": revenue_cat
         })
     
 class RfmAnalysis(Resource):
     def get(self):
         limit = request.args.get('limit', 50, type=int)
-        rfm_data = Rfm.query.with_entities(Rfm.customer_id, Rfm.recency, Rfm.freq, Rfm.monetary)
+        mall = request.args.get('mall', None, type=str)
+        if mall == None:
+            rfm_data = Rfm.query.with_entities(Rfm.customer_id, Rfm.recency, Rfm.freq, Rfm.monetary)
+        else: rfm_data = Rfm.query.with_entities(Rfm.customer_id, Rfm.recency, Rfm.freq, Rfm.monetary).filter_by(shopping_mall=mall)
         df = pd.DataFrame(rfm_data)
         rfm_data = df.sort_values(by=['recency', 'freq', 'monetary'], ascending=False)\
             .head(limit)\
