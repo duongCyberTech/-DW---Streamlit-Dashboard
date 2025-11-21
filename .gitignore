@@ -1,0 +1,45 @@
+# --- Byte-compiled / Optimized / DLL files ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- Virtual Environments (covers your specific request) ---
+# It is standard practice to list the directory names used for venvs
+venv/
+.venv/
+env/
+.env/
+my_venv/
+
+# --- Distribution / Packaging ---
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# --- Unit Test / Coverage reports ---
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.pytest_cache/
+
+# --- Environment Variables (CRITICAL for security) ---
+.env
+.env.local
+.env.*.local
+
+# --- Jupyter Notebooks ---
+.ipynb_checkpoints
+
+# --- IDE / Editor Settings (Optional but recommended) ---
+.vscode/
+.idea/
+*.swp
+.DS_Store
