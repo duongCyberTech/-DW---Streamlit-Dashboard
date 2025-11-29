@@ -4,6 +4,7 @@ from flask_cors import CORS
 from .config import Config
 from .extensions import db
 from .resources.retail import *
+from .resources.rfm import *
 
 def create_app():
     app = Flask(__name__)
@@ -20,6 +21,7 @@ def create_app():
     api.add_resource(StatsResource, '/api/count-transactions')
     api.add_resource(RevenueByMonthInYear, '/api/revenue-by-month')
     api.add_resource(RfmAnalysis, '/api/rfm')
+    api.add_resource(RfmSegmentation, '/api/rfm-segmentation')
 
     with app.app_context():
         db.create_all()

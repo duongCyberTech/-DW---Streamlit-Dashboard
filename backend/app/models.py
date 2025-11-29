@@ -3,7 +3,7 @@ from .extensions import db
 class Retail(db.Model):
     __tablename__ = 'retail'
 
-    invoice_no = db.Column(db.String(20), primary_key=True)
+    invoice_no = db.Column(db.String(36), primary_key=True)
     quantity = db.Column(db.Integer, nullable=False)
     price = db.Column(db.Numeric(10, 2), nullable=False)
     totalamount = db.Column(db.Numeric(12, 2), nullable=False)
@@ -45,7 +45,7 @@ class Retail(db.Model):
 class Rfm(db.Model):
     __tablename__ = 'rfm'
 
-    invoice_no = db.Column(db.String(20), primary_key=True)
+    invoice_no = db.Column(db.String(36), primary_key=True)
     quantity = db.Column(db.Integer, nullable=False)
     price = db.Column(db.Numeric(10, 2), nullable=False)
     totalamount = db.Column(db.Numeric(12, 2), nullable=False)
